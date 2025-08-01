@@ -1,0 +1,66 @@
+{
+  "apiType": "REST",
+  "fetchPropertyFile": true,
+  "selectedGitOrg": "example-organization",
+  "pageData": {
+    "wikiSpaceKey": "MYSPACE",
+    "pageToBeCreatedTitle": "Supply Chain Integration API - Gen AI MuleSoft Apigee Denodo",
+    "pageToBeCreatedParentPageTitle": "API Documentation",
+    "appName": "SupplyChainIntegrationApp"
+  },
+  "selectedTddIrdFiles": [
+    {
+      "name": "technical-design-document.pdf",
+      "size": 2048576,
+      "type": "application/pdf",
+      "lastModified": 1703779200000
+    },
+    {
+      "name": "interface-requirements.docx", 
+      "size": 1536000,
+      "type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "lastModified": 1703692800000
+    },
+    {
+      "name": "api-specifications.yaml",
+      "size": 65536,
+      "type": "application/x-yaml",
+      "lastModified": 1703865600000
+    }
+  ],
+  "selectedPostmanFiles": [
+    {
+      "name": "supply-chain-api-collection.json",
+      "size": 98304,
+      "type": "application/json", 
+      "lastModified": 1703952000000
+    },
+    {
+      "name": "test-use-cases.json",
+      "size": 32768,
+      "type": "application/json",
+      "lastModified": 1703779200000
+    }
+  ],
+  "selectedCommFiles": [
+    {
+      "name": "stakeholder-requirements.md",
+      "size": 16384,
+      "type": "text/markdown",
+      "lastModified": 1703606400000
+    },
+    {
+      "name": "project-communication-log.pdf",
+      "size": 512000,
+      "type": "application/pdf", 
+      "lastModified": 1703865600000
+    },
+    {
+      "name": "meeting-notes-integration-planning.docx",
+      "size": 204800,
+      "type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "lastModified": 1703692800000
+    }
+  ],
+  "hasFiles": true
+}
