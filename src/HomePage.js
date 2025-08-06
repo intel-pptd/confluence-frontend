@@ -172,7 +172,6 @@ function HomePage({ onStart }) {
 
   // Right Column Component
   const RightColumn = () => (
-    
     <div
       style={{
         width: "80%",
@@ -224,98 +223,108 @@ function HomePage({ onStart }) {
         </p>
       </div>
 
-      {/* Technology Integration Images */}
+      {/* Main content area with benefits on left and image on right */}
       <div
         style={{
           display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          alignItems: "center",
           width: "100%",
-          gap: "15px",
+          gap: "30px",
+          alignItems: "flex-start",
         }}
       >
-        {/* Supply Chain Integration Display */}
+        
+        {/* Benefits section - Left side */}
         <div
           style={{
             display: "flex",
             flexDirection: "column",
-            alignItems: "center",
-            width: "100%",
-            maxWidth: "400px",
+            gap: "20px",
+            flex: "0 0 200px", // Fixed width for benefits
           }}
         >
+          <div style={{ textAlign: "center" }}>
+            <div style={{ fontSize: "1.5rem", marginBottom: "4px" }}>⏱️</div>
+            <div style={{ color: "#2C3E50", fontWeight: "600", fontSize: "0.85rem" }}>Save Time</div>
+            <div style={{ color: "#7F8C8D", fontSize: "0.7rem" }}>Automated processes</div>
+          </div>
+          <div style={{ textAlign: "center" }}>
+            <div style={{ fontSize: "1.5rem", marginBottom: "4px" }}>🎯</div>
+            <div style={{ color: "#2C3E50", fontWeight: "600", fontSize: "0.85rem" }}>Accuracy</div>
+            <div style={{ color: "#7F8C8D", fontSize: "0.7rem" }}>AI-powered precision</div>
+          </div>
+          <div style={{ textAlign: "center" }}>
+            <div style={{ fontSize: "1.5rem", marginBottom: "4px" }}>📈</div>
+            <div style={{ color: "#2C3E50", fontWeight: "600", fontSize: "0.85rem" }}>Efficiency</div>
+            <div style={{ color: "#7F8C8D", fontSize: "0.7rem" }}>Optimized workflows</div>
+          </div>
+        </div>
+
+        {/* Technology Integration Images - Right side */}
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            alignItems: "center",
+            flex: 1,
+            gap: "15px",
+          }}
+        >
+          {/* Supply Chain Integration Display */}
           <div
             style={{
-              background: "linear-gradient(145deg, #ECF0F1, #BDC3C7)",
-              padding: "12px",
-              borderRadius: "15px",
-              boxShadow: "0 10px 25px rgba(52, 152, 219, 0.12)",
-              transition: "transform 0.3s ease",
-              transform: animationPhase === 1 ? "scale(1.02)" : "scale(1)",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
               width: "100%",
-              border: "2px solid rgba(52, 152, 219, 0.1)",
+              maxWidth: "400px",
             }}
           >
-            <img
-              src="/dist/images/logos/unboxed/PPTD-SC.png"
-              alt="Supply Chain Integration - Gen AI, MuleSoft, Apigee, Denodo"
+            <div
               style={{
+                background: "linear-gradient(145deg, #ECF0F1, #BDC3C7)",
+                padding: "12px",
+                borderRadius: "15px",
+                boxShadow: "0 10px 25px rgba(52, 152, 219, 0.12)",
+                transition: "transform 0.3s ease",
+                transform: animationPhase === 1 ? "scale(1.02)" : "scale(1)",
                 width: "100%",
-                height: "140px",
-                objectFit: "contain",
-                borderRadius: "8px",
+                border: "2px solid rgba(52, 152, 219, 0.1)",
               }}
-            />
+            >
+              <img
+                src="/dist/images/logos/unboxed/PPTD-SC.png"
+                alt="Supply Chain Integration - Gen AI, MuleSoft, Apigee, Denodo"
+                style={{
+                  width: "100%",
+                  height: "250px", // Increased from 140px to 200px
+                  objectFit: "contain",
+                  borderRadius: "8px",
+                }}
+              />
+            </div>
+            <h3
+              style={{
+                color: "#2C3E50",
+                fontSize: "1rem",
+                margin: "10px 0 3px 0",
+                textAlign: "center",
+                fontWeight: "600",
+              }}
+            >
+              Supply Chain Integration
+            </h3>
+            <p
+              style={{
+                color: "#7F8C8D",
+                fontSize: "0.85rem",
+                margin: 0,
+                textAlign: "center",
+              }}
+            >
+              Gen AI • MuleSoft • Apigee • Denodo
+            </p>
           </div>
-          <h3
-            style={{
-              color: "#2C3E50",
-              fontSize: "1rem",
-              margin: "10px 0 3px 0",
-              textAlign: "center",
-              fontWeight: "600",
-            }}
-          >
-            Supply Chain Integration
-          </h3>
-          <p
-            style={{
-              color: "#7F8C8D",
-              fontSize: "0.85rem",
-              margin: 0,
-              textAlign: "center",
-            }}
-          >
-            Gen AI • MuleSoft • Apigee • Denodo
-          </p>
-        </div>
-      </div>
-
-      {/* Benefits section */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-around",
-          width: "100%",
-          marginTop: "15px",
-          gap: "12px",
-        }}
-      >
-        <div style={{ textAlign: "center", flex: 1 }}>
-          <div style={{ fontSize: "1.5rem", marginBottom: "4px" }}>⏱️</div>
-          <div style={{ color: "#2C3E50", fontWeight: "600", fontSize: "0.85rem" }}>Save Time</div>
-          <div style={{ color: "#7F8C8D", fontSize: "0.7rem" }}>Automated processes</div>
-        </div>
-        <div style={{ textAlign: "center", flex: 1 }}>
-          <div style={{ fontSize: "1.5rem", marginBottom: "4px" }}>🎯</div>
-          <div style={{ color: "#2C3E50", fontWeight: "600", fontSize: "0.85rem" }}>Accuracy</div>
-          <div style={{ color: "#7F8C8D", fontSize: "0.7rem" }}>AI-powered precision</div>
-        </div>
-        <div style={{ textAlign: "center", flex: 1 }}>
-          <div style={{ fontSize: "1.5rem", marginBottom: "4px" }}>📈</div>
-          <div style={{ color: "#2C3E50", fontWeight: "600", fontSize: "0.85rem" }}>Efficiency</div>
-          <div style={{ color: "#7F8C8D", fontSize: "0.7rem" }}>Optimized workflows</div>
         </div>
       </div>
     </div>
