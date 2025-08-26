@@ -21,6 +21,11 @@ function App() {
   const [apiType, setApiType] = useState("mulesoft"); // Set the default to "mulesoft"
   const [wikiSpaceKeys, setWikiSpaceKeys] = useState([]);
 
+  // Function to clear response
+  const clearResponse = () => {
+    setResponse(null);
+  };
+
   // Alternative approach: Add file metadata
   const handleSubmit = async (formDataWithFiles) => {
     const hasFiles = formDataWithFiles.hasFiles;
@@ -36,6 +41,14 @@ function App() {
       data.append('pageToBeCreatedTitle', formDataWithFiles.pageToBeCreatedTitle);
       data.append('pageToBeCreatedParentPageTitle', formDataWithFiles.pageToBeCreatedParentPageTitle);
       data.append('appName', formDataWithFiles.appName);
+      data.append('l0ProductionSupport', formDataWithFiles.l0ProductionSupport);
+      data.append('l0ProductionSupportEmail', formDataWithFiles.l0ProductionSupportEmail);
+      data.append('l2MulesoftSupport', formDataWithFiles.l2MulesoftSupport);
+      data.append('l2MulesoftSupportEmail', formDataWithFiles.l2MulesoftSupportEmail);
+      data.append('integrationDevTeam', formDataWithFiles.integrationDevTeam);
+      data.append('integrationDevTeamEmail', formDataWithFiles.integrationDevTeamEmail);
+      data.append('businessTeam', formDataWithFiles.businessTeam);
+      data.append('businessTeamEmail', formDataWithFiles.businessTeamEmail);
       
       // Add files with CATEGORY-SPECIFIC field names
       if (formDataWithFiles.selectedTddIrdFiles && formDataWithFiles.selectedTddIrdFiles.length > 0) {
@@ -64,11 +77,19 @@ function App() {
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       // Set the response for display in UI
       const result = await response.json();
-      setResponse(result);
-      return result;
+      
+      // Normalize the response format to match UI expectations
+      const normalizedResult = {
+        status: "success",
+        message: result.message,           // "Confluence page generated successfully"
+        pageURL: result.pageUrl            // Your actual wiki URL
+      };
+      
+      setResponse(normalizedResult);
+      return normalizedResult;
     } else {
       // Send JSON request without files
       const response = await fetch(`${BACKEND_DOMAIN}/generate-confluence`, {
@@ -83,22 +104,36 @@ function App() {
           wikiSpaceKey: formDataWithFiles.wikiSpaceKey,
           pageToBeCreatedTitle: formDataWithFiles.pageToBeCreatedTitle,
           pageToBeCreatedParentPageTitle: formDataWithFiles.pageToBeCreatedParentPageTitle,
-          appName: formDataWithFiles.appName
+          appName: formDataWithFiles.appName,
+          l0ProductionSupport: formDataWithFiles.l0ProductionSupport,
+          l0ProductionSupportEmail: formDataWithFiles.l0ProductionSupportEmail,
+          l2MulesoftSupport: formDataWithFiles.l2MulesoftSupport,
+          l2MulesoftSupportEmail: formDataWithFiles.l2MulesoftSupportEmail,
+          integrationDevTeam: formDataWithFiles.integrationDevTeam,
+          integrationDevTeamEmail: formDataWithFiles.integrationDevTeamEmail,
+          businessTeam: formDataWithFiles.businessTeam,
+          businessTeamEmail: formDataWithFiles.businessTeamEmail
         })
       });
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       // Set the response for display in UI
       const result = await response.json();
-      setResponse(result);
-      return result;
+      
+      // Normalize the response format to match UI expectations
+      const normalizedResult = {
+        status: "success",
+        message: result.message,           // "Confluence page generated successfully"
+        pageURL: result.pageUrl            // Your actual wiki URL
+      };
+      
+      setResponse(normalizedResult);
+      return normalizedResult;
     }
-  };
-
-  return (
+  };  return (
     <>
       {/* Top Nav Section */}
       <div className="container-fluid" style={{ 
@@ -125,6 +160,7 @@ function App() {
           setWikiSpaceKeys={setWikiSpaceKeys}
           handleSubmit={handleSubmit}
           response={response}
+          clearResponse={clearResponse}
           onNavigateHome={() => setShowForm(false)}
         />
       ) : (

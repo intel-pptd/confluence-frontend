@@ -7,6 +7,8 @@ import WikiSpaceKeyDropdown from "./WikiSpaceKeyDropdown";
 import FileInput from "./FileInput";
 import FetchPropertyFileRadio from "./FetchPropertyFileRadio";
 import ContactsSection from './ContactsSection';
+// eslint-disable-next-line no-unused-vars
+import { API_ENDPOINTS } from './config';
 
 // Update the WikiGeneration component with full-page layout
 function WikiGeneration({
@@ -24,6 +26,7 @@ function WikiGeneration({
   setWikiSpaceKeys,
   handleSubmit,
   response,
+  clearResponse,
   onNavigateHome,
 }) {
   const containerStyle = {
@@ -89,49 +92,133 @@ function WikiGeneration({
   // Wrap the handleSubmit prop in a local handler
   const onLocalSubmit = async (e) => {
     e.preventDefault();
+    
+    if (!validateRequiredFields()) {
+      return;
+    }
+    
+    // Clear previous response
+    if (clearResponse) {
+      clearResponse();
+    }
+    
     setInProgress(true);
     setStatusMessage("Generating Confluence page... Please wait.");
 
     try {
-      // Create proper form data structure that matches backend expectations
       const formDataWithFiles = {
-        // Form field data (as expected by backend)
-        apiType: apiType,
-        fetchPropertyFile: fetchPropertyFile,
-        selectedGitOrg: selectedGitOrg,
-        wikiSpaceKey: pageData.wikiSpaceKey,
-        pageToBeCreatedTitle: pageData.pageToBeCreatedTitle,
-        pageToBeCreatedParentPageTitle: pageData.pageToBeCreatedParentPageTitle,
-        appName: pageData.appName,
-        
-        // Team Contact Information
-        l0ProductionSupport: pageData.l0ProductionSupport,
-        l0ProductionSupportEmail: pageData.l0ProductionSupportEmail,
-        l2MulesoftSupport: pageData.l2MulesoftSupport,
-        l2MulesoftSupportEmail: pageData.l2MulesoftSupportEmail,
-        integrationDevTeam: pageData.integrationDevTeam,
-        integrationDevTeamEmail: pageData.integrationDevTeamEmail,
-        businessTeam: pageData.businessTeam,
-        businessTeamEmail: pageData.businessTeamEmail,
-        
-        // File arrays
-        selectedTddIrdFiles: selectedTddIrdFiles,
-        selectedPostmanFiles: selectedPostmanFiles,
-        selectedCommFiles: selectedCommFiles,
+        apiType: apiType || "REST",
+        fetchPropertyFile: fetchPropertyFile || "no",
+        selectedGitOrg: selectedGitOrg || "",
+        wikiSpaceKey: pageData.wikiSpaceKey || "",
+        pageToBeCreatedTitle: pageData.pageToBeCreatedTitle || "",
+        pageToBeCreatedParentPageTitle: pageData.pageToBeCreatedParentPageTitle || "",
+        appName: pageData.appName || "",
+        l0ProductionSupport: pageData.l0ProductionSupport || "no",
+        l0ProductionSupportEmail: pageData.l0ProductionSupportEmail || "",
+        l2MulesoftSupport: pageData.l2MulesoftSupport || "no",
+        l2MulesoftSupportEmail: pageData.l2MulesoftSupportEmail || "",
+        integrationDevTeam: pageData.integrationDevTeam || "no",
+        integrationDevTeamEmail: pageData.integrationDevTeamEmail || "",
+        businessTeam: pageData.businessTeam || "no",
+        businessTeamEmail: pageData.businessTeamEmail || "",
+        selectedTddIrdFiles: selectedTddIrdFiles || [],
+        selectedPostmanFiles: selectedPostmanFiles || [],
+        selectedCommFiles: selectedCommFiles || [],
         hasFiles: (selectedTddIrdFiles && selectedTddIrdFiles.length > 0) ||
                   (selectedPostmanFiles && selectedPostmanFiles.length > 0) ||
                   (selectedCommFiles && selectedCommFiles.length > 0)
       };
 
-      // Call handleSubmit and use the result
-      await handleSubmit(formDataWithFiles);
+      console.log("Sending data:", formDataWithFiles);
+      
+      const result = await handleSubmit(formDataWithFiles);
+      
+      // Detailed backend response logging
+      console.log("=== BACKEND RESPONSE START ===");
+      console.log("Full result:", result);
+      console.log("Result type:", typeof result);
+      console.log("Result keys:", result ? Object.keys(result) : "No keys");
+      console.log("Result.status:", result?.status);
+      console.log("Result.message:", result?.message);
+      console.log("Result.pageURL:", result?.pageURL);
+      console.log("Result.pageUrl:", result?.pageUrl);
+      console.log("JSON stringified:", JSON.stringify(result, null, 2));
+      console.log("=== BACKEND RESPONSE END ===");
+      
       setInProgress(false);
-      setStatusMessage("Confluence page generated successfully!");
+      
+      if (result?.status === "success") {
+        const successMsg = result.message || "Confluence page generated successfully!";
+        const pageUrl = result.pageURL || result.pageUrl;
+        
+        if (pageUrl) {
+          setStatusMessage(`${successMsg} - Page URL: ${pageUrl}`);
+        } else {
+          setStatusMessage(successMsg);
+        }
+        console.log("Success response set in parent component");
+        console.log("Page URL:", pageUrl);
+      } else {
+        setStatusMessage(result?.message || "An unexpected error occurred.");
+        console.log("Error response:", result);
+      }
+      
     } catch (error) {
+      console.error("Submission error:", error);
       setInProgress(false);
-      setStatusMessage(`Error generating Confluence page: ${error.message}`);
+      setStatusMessage(`Error: ${error.message}`);
     }
   };
+
+  // Add validation function
+  const validateRequiredFields = () => {
+    const requiredFields = [
+      { field: apiType, name: "API Type" },
+      { field: selectedGitOrg, name: "ESB Organization" },
+      { field: pageData.wikiSpaceKey, name: "Wiki Space Key" },
+      { field: pageData.pageToBeCreatedTitle, name: "Page Title" },
+      { field: pageData.pageToBeCreatedParentPageTitle, name: "Parent Page" },
+      { field: pageData.appName, name: "App Name" }
+    ];
+
+    const missingFields = requiredFields.filter(item => !item.field || item.field.trim() === "");
+    
+    if (missingFields.length > 0) {
+      const fieldNames = missingFields.map(item => item.name).join(", ");
+      setStatusMessage(`Missing required fields: ${fieldNames}`);
+      return false;
+    }
+
+    // Validate email fields for selected teams
+    const emailValidationErrors = [];
+    
+    if (pageData.l0ProductionSupport === "yes" && (!pageData.l0ProductionSupportEmail || !pageData.l0ProductionSupportEmail.includes('@'))) {
+      emailValidationErrors.push("L0 Production Support email");
+    }
+    if (pageData.l2MulesoftSupport === "yes" && (!pageData.l2MulesoftSupportEmail || !pageData.l2MulesoftSupportEmail.includes('@'))) {
+      emailValidationErrors.push("L2 Mulesoft Support email");
+    }
+    if (pageData.integrationDevTeam === "yes" && (!pageData.integrationDevTeamEmail || !pageData.integrationDevTeamEmail.includes('@'))) {
+      emailValidationErrors.push("Integration Dev Team email");
+    }
+    if (pageData.businessTeam === "yes" && (!pageData.businessTeamEmail || !pageData.businessTeamEmail.includes('@'))) {
+      emailValidationErrors.push("Business Team email");
+    }
+
+    if (emailValidationErrors.length > 0) {
+      setStatusMessage(`Invalid or missing email addresses: ${emailValidationErrors.join(", ")}`);
+      return false;
+    }
+
+    return true;
+  };
+
+  // Debug: Log the response prop
+  console.log("Current response prop:", response);
+  console.log("Response status:", response?.status);
+  console.log("Response pageURL:", response?.pageURL);
+  console.log("Response pageUrl:", response?.pageUrl);
 
   return (
     <div style={{ minHeight: "100vh", position: "relative" }}>
@@ -520,34 +607,50 @@ function WikiGeneration({
           </div>
         )}
 
-        {!inProgress && response && response.status === "success" && (
+        {/* Show URL regardless of status if it exists */}
+        {!inProgress && response && (response.pageURL || response.pageUrl) && (
           <div style={{
             ...sectionStyle,
             background: "linear-gradient(145deg, #D5F4E6, #A3E4C7)",
             border: "2px solid #27AE60",
             textAlign: "center",
+            padding: "30px",
           }}>
-            <div style={{ fontWeight: "600", color: "#1E8449", fontSize: "1.1rem", marginBottom: "15px" }}>
-              ✅ {response.message}
+            <div style={{ 
+              fontWeight: "700", 
+              color: "#1E8449", 
+              fontSize: "1.1rem", 
+              marginBottom: "20px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "10px"
+            }}>
+              <span style={{ fontSize: "2rem" }}>🎉</span>
+              {response.message || "Page generated successfully!"}
             </div>
-            {response.pageURL && (
+            <div style={{ marginTop: "20px" }}>
               <a
-                href={response.pageURL}
+                href={response.pageURL || response.pageUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{
                   color: "#2980B9",
-                  textDecoration: "none",
+                  textDecoration: "underline",
                   fontWeight: "600",
-                  fontSize: "1rem",
-                  borderBottom: "2px solid #3498DB",
-                  paddingBottom: "2px",
-                  transition: "all 0.3s ease",
+                  fontSize: "1.1rem",
+                  transition: "color 0.3s ease",
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.color = "#3498DB";
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.color = "#2980B9";
                 }}
               >
-                🔗 View Generated Page
+                🔗 View Generated Confluence Page
               </a>
-            )}
+            </div>
           </div>
         )}
 
