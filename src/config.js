@@ -1,6 +1,6 @@
 // Backend configuration
-//export const BACKEND_DOMAIN = "https://pptd-automations-backend.intel.com";
-export const BACKEND_DOMAIN = "http://localhost:5000";
+export const BACKEND_DOMAIN = "https://pptd-automations-backend.intel.com";
+//export const BACKEND_DOMAIN = "http://localhost:5000";
 
 // API endpoints
 export const API_ENDPOINTS = {
