@@ -172,6 +172,7 @@ function ContactsSection({ pageData, setPageData, labelStyle, sectionStyle }) {
                     checked={pageData[team.key] === "yes"}
                     onChange={(e) => handleContactChange(team.key, e.target.value)}
                     style={{ transform: "scale(1.1)" }}
+                    aria-label={`${team.title} include yes`}
                   />
                   <span style={{ 
                     fontSize: "14px", 
@@ -186,9 +187,10 @@ function ContactsSection({ pageData, setPageData, labelStyle, sectionStyle }) {
                     type="radio"
                     name={team.key}
                     value="no"
-                    checked={pageData[team.key] === "no"}
+                    checked={pageData[team.key] === "no" || pageData[team.key] === undefined}
                     onChange={(e) => handleContactChange(team.key, e.target.value)}
                     style={{ transform: "scale(1.1)" }}
+                    aria-label={`${team.title} include no (default)`}
                   />
                   <span style={{ 
                     fontSize: "14px", 

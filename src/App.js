@@ -12,13 +12,13 @@ function App() {
     wikiSpaceKey: "",
     appName: "",
     gitOrg: "",
-    apiType: "",
+    apiType: "MuleSoft", // Sync with default radio selection
     fetchPropertyFile: "No"  // Added here
   });
   const [response, setResponse] = useState(null);
   const [gitOrgs, setGitOrgs] = useState([]);
   const [selectedGitOrg, setSelectedGitOrg] = useState("");
-  const [apiType, setApiType] = useState("mulesoft"); // Set the default to "mulesoft"
+  const [apiType, setApiType] = useState("MuleSoft"); // Default to MuleSoft (matches RadioGroup value)
   const [wikiSpaceKeys, setWikiSpaceKeys] = useState([]);
 
   // Function to clear response

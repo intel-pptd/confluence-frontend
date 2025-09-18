@@ -4,11 +4,19 @@ function FetchPropertyFileRadio({ fetchPropertyFile, setFetchPropertyFile, selec
   
   // Auto-set fetchPropertyFile based on selectedGitOrg
   useEffect(() => {
+    // Only run when org changes; avoid redundant state sets which can cause lag while typing in other fields
     if (selectedGitOrg && selectedGitOrg.toLowerCase() !== 'sc-esb') {
-      // Force "no" for all orgs except SC-ESB
-      setFetchPropertyFile('no');
+      if (fetchPropertyFile !== 'no') {
+        setFetchPropertyFile('no');
+      }
+    } else if (selectedGitOrg && selectedGitOrg.toLowerCase() === 'sc-esb') {
+      // Normalize value to 'no' or 'yes'; default to 'no' if something else
+      if (fetchPropertyFile !== 'yes' && fetchPropertyFile !== 'no') {
+        setFetchPropertyFile('no');
+      }
     }
-  }, [selectedGitOrg, setFetchPropertyFile]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedGitOrg]);
 
   // Check if current org is SC-ESB (case insensitive)
   const isScEsb = selectedGitOrg && selectedGitOrg.toLowerCase() === 'sc-esb';
