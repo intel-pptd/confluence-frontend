@@ -73,6 +73,26 @@ function WikiGeneration({
   const [selectedPostmanFiles, setSelectedPostmanFiles] = useState([]);
   const [selectedCommFiles, setSelectedCommFiles] = useState([]);
 
+  // === Request Size Estimation (Single Limit) ===
+  // Instead of per-file restrictions, we estimate the total multipart/form-data payload.
+  // NOTE: Actual multipart adds overhead (~ a few hundred bytes per part + boundaries). We add a 7% padding.
+  // Max request size adjusted to 5GB per user request. WARNING: Single-request uploads this large
+  // are likely to be unreliable in browsers and may exceed practical limits of ingress/controllers.
+  // Consider implementing a chunked/direct-to-object-storage upload strategy for production.
+  const MAX_REQUEST_SIZE = 5 * 1024 * 1024 * 1024; // 5 GB
+
+  const sumSizes = (files) => (files || []).reduce((acc, f) => acc + (f?.size || 0), 0);
+  const rawFilesTotal = () => sumSizes(selectedTddIrdFiles) + sumSizes(selectedPostmanFiles) + sumSizes(selectedCommFiles);
+  const estimatedRequestSize = () => Math.ceil(rawFilesTotal() * 1.07); // add 7% padding for multipart overhead
+  const formatBytes = (bytes) => {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B','KB','MB','GB'];
+    const i = Math.floor(Math.log(bytes)/Math.log(k));
+    const val = bytes / Math.pow(k,i);
+    return `${val < 10 ? val.toFixed(2) : val.toFixed(1)} ${sizes[i]}`;
+  };
+
   // File change handlers (ensure they're separate)
   const handleTddIrdFileChange = async (files) => {
     console.log("TDD/IRD files selected:", files);
@@ -94,6 +114,13 @@ function WikiGeneration({
     e.preventDefault();
     
     if (!validateRequiredFields()) {
+      return;
+    }
+
+    // Enforce only TOTAL request size limit before submission
+    const estSize = estimatedRequestSize();
+    if (estSize > MAX_REQUEST_SIZE) {
+      setStatusMessage(`Total request size ${formatBytes(estSize)} exceeds limit ${formatBytes(MAX_REQUEST_SIZE)}. Please remove or reduce files.`);
       return;
     }
     
@@ -501,6 +528,11 @@ function WikiGeneration({
                 <div style={{ fontSize: "12px", color: "#7F8C8D", marginTop: "10px", lineHeight: "1.4" }}>
                   Technical Design Documents, Interface Requirements, API Specifications
                 </div>
+                {selectedTddIrdFiles.length>0 && (
+                  <div style={{ marginTop: 6, fontSize: 11, color: '#2D3748' }}>
+                    {selectedTddIrdFiles.length} file{selectedTddIrdFiles.length>1?'s':''}
+                  </div>
+                )}
               </div>
 
               {/* Postman/TUT Files */}
@@ -528,6 +560,11 @@ function WikiGeneration({
                 <div style={{ fontSize: "12px", color: "#7F8C8D", marginTop: "10px", lineHeight: "1.4" }}>
                   Postman Collections, Test Use Cases, API Testing Documentation
                 </div>
+                {selectedPostmanFiles.length>0 && (
+                  <div style={{ marginTop: 6, fontSize: 11, color: '#2D3748' }}>
+                    {selectedPostmanFiles.length} file{selectedPostmanFiles.length>1?'s':''}
+                  </div>
+                )}
               </div>
 
               {/* Communication Documents */}
@@ -555,8 +592,34 @@ function WikiGeneration({
                 <div style={{ fontSize: "12px", color: "#7F8C8D", marginTop: "10px", lineHeight: "1.4" }}>
                   Email threads, Meeting notes, Requirements, Business Specifications
                 </div>
+                {selectedCommFiles.length>0 && (
+                  <div style={{ marginTop: 6, fontSize: 11, color: '#2D3748' }}>
+                    {selectedCommFiles.length} file{selectedCommFiles.length>1?'s':''}
+                  </div>
+                )}
               </div>
             </div>
+            {(selectedTddIrdFiles.length+selectedPostmanFiles.length+selectedCommFiles.length)>0 && (
+              <div style={{
+                marginTop: 18,
+                padding: '14px 18px',
+                background: '#F0F9FF',
+                border: '1px dashed #3498DB',
+                borderRadius: 10,
+                fontSize: 12,
+                color: '#1F2D3D',
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: 20
+              }}>
+                <div><strong>Estimated Request Size:</strong> {formatBytes(estimatedRequestSize())} / {formatBytes(MAX_REQUEST_SIZE)}</div>
+                <div><strong>Total File Bytes:</strong> {formatBytes(rawFilesTotal())}</div>
+                <div style={{opacity:0.7}}>Multipart overhead padded by 7%</div>
+                {estimatedRequestSize() > MAX_REQUEST_SIZE && (
+                  <div style={{ color: '#E74C3C', fontWeight: 600 }}>Over limit - adjust before submitting.</div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Generate Button */}
