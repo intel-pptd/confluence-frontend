@@ -134,7 +134,7 @@ function WikiGeneration({
 
     try {
       const formDataWithFiles = {
-        apiType: apiType || "REST",
+        apiType: apiType || "MuleSoft",
         fetchPropertyFile: fetchPropertyFile || "no",
         selectedGitOrg: selectedGitOrg || "",
         wikiSpaceKey: pageData.wikiSpaceKey || "",
@@ -342,7 +342,7 @@ function WikiGeneration({
                 <RadioGroup apiType={apiType} setApiType={setApiType} />
               </div>
 
-              <div>
+              <div hidden={apiType === "Apigee"}>
                 <label style={labelStyle}>ESB Organization: <span style={{ color: "#E74C3C" }}>*</span></label>
                 <GitOrgDropdown
                   gitOrgs={gitOrgs}
@@ -381,7 +381,7 @@ function WikiGeneration({
                 />
               </div>
 
-              <div>
+              <div hidden={apiType === "Apigee"}>
                 <FetchPropertyFileRadio
                   fetchPropertyFile={fetchPropertyFile}
                   setFetchPropertyFile={setFetchPropertyFile}
@@ -463,6 +463,21 @@ function WikiGeneration({
                   }}
                   required
                   placeholder="Enter your application name"
+                />
+              </div>
+                 <div hidden={apiType === "MuleSoft"}>
+                <label style={labelStyle}>Proxy Name: <span style={{ color: "#E74C3C" }}>*</span></label>
+                <input 
+                  type="text"
+                  value={pageData.proxyName}
+                  onChange={(e) => setPageData({ ...pageData, proxyName: e.target.value })}
+                  style={{
+                    ...fieldStyle,
+                    width: "90%",
+                    maxWidth: "400px",
+                  }}
+                  required
+                  placeholder="Enter your application's proxy name"
                 />
               </div>
             </div>
