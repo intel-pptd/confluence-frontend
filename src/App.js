@@ -2,10 +2,12 @@ import React, { useState } from "react";
 // Remove unused imports
 import HomePage from "./HomePage";
 import WikiGeneration from "./WikiGeneration";
-import { BACKEND_DOMAIN } from "./config";
+import GenericWikiGeneration from "./GenericWikiGeneration";
+import { BACKEND_DOMAIN, API_ENDPOINTS } from "./config";
 
 function App() {
   const [showForm, setShowForm] = useState(false);
+  const [showGenForm, setShowGenForm] = useState(false);  
   const [pageData, setPageData] = useState({
     pageToBeCreatedTitle: "",
     pageToBeCreatedParentPageTitle: "",
@@ -25,11 +27,105 @@ function App() {
   const clearResponse = () => {
     setResponse(null);
   };
-
+  
   // Alternative approach: Add file metadata
+  
   const handleSubmit = async (formDataWithFiles) => {
-    const hasFiles = formDataWithFiles.hasFiles;
-    
+  const hasFiles = formDataWithFiles.hasFiles;
+  const audience = formDataWithFiles.audience;
+  if(audience){
+    const token = localStorage.getItem("authToken");
+    if (hasFiles) {      
+      const data = new FormData();      
+      // Add form fields for generic wiki
+      data.append('documentType',formDataWithFiles.documentType);
+      data.append('productName',formDataWithFiles.productName);
+      data.append('productDescription',formDataWithFiles.productDescription);
+      data.append('audience',formDataWithFiles.audience);
+      data.append('purpose',formDataWithFiles.purpose);
+      data.append('tone',formDataWithFiles.tone);      
+      data.append('hasFiles',formDataWithFiles.hasFiles);
+      data.append('wikiSpaceKey', formDataWithFiles.wikiSpaceKey);
+      data.append('pageToBeCreatedTitle', formDataWithFiles.pageToBeCreatedTitle);
+      data.append('pageToBeCreatedParentPageTitle', formDataWithFiles.pageToBeCreatedParentPageTitle);
+      data.append('integrationDevTeam', formDataWithFiles.integrationDevTeam);
+      data.append('integrationDevTeamEmail', formDataWithFiles.integrationDevTeamEmail);
+      data.append('businessTeam', formDataWithFiles.businessTeam);
+      data.append('businessTeamEmail', formDataWithFiles.businessTeamEmail);    
+     
+      if (formDataWithFiles.selectedCommFiles && formDataWithFiles.selectedCommFiles.length > 0) {
+        formDataWithFiles.selectedCommFiles.forEach(file => {
+          data.append('commFiles', file); // Specific field name for Communication
+        });
+      }      
+      const response = await fetch(`${API_ENDPOINTS.GEN_WIKI_GENERATE_CONFLUENCE}`, {
+        method: 'POST',
+        headers:{
+                "Authorization": `Basic ${token}`
+                },
+        body: data
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      // Set the response for display in UI
+      const result = await response.json();
+      
+      // Normalize the response format to match UI expectations
+      const normalizedResult = {
+        status: "success",
+        message: result.message,           // "Confluence page generated successfully"
+        pageURL: result.pageUrl            // Your actual wiki URL
+      };
+      
+      setResponse(normalizedResult);
+      return normalizedResult;
+    } else {
+      // Send JSON request without files
+      const response = await fetch(`${API_ENDPOINTS.GEN_WIKI_GENERATE_CONFLUENCE}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          "Authorization": `Basic ${token}`
+        },
+        body: JSON.stringify({
+          documentType:formDataWithFiles.documentType,
+          productName:formDataWithFiles.productName,
+          productDescription:formDataWithFiles.productDescription,
+          audience:formDataWithFiles.audience,
+          purpose:formDataWithFiles.purpose,
+          tone:formDataWithFiles.tone,      
+          hasFiles:formDataWithFiles.hasFiles,
+          wikiSpaceKey: formDataWithFiles.wikiSpaceKey,
+          pageToBeCreatedTitle: formDataWithFiles.pageToBeCreatedTitle,
+          pageToBeCreatedParentPageTitle: formDataWithFiles.pageToBeCreatedParentPageTitle,
+          integrationDevTeam: formDataWithFiles.integrationDevTeam,
+          integrationDevTeamEmail: formDataWithFiles.integrationDevTeamEmail,
+          businessTeam: formDataWithFiles.businessTeam,
+          businessTeamEmail: formDataWithFiles.businessTeamEmail
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      // Set the response for display in UI
+      const result = await response.json();
+      
+      // Normalize the response format to match UI expectations
+      const normalizedResult = {
+        status: "success",
+        message: result.message,           // "Confluence page generated successfully"
+        pageURL: result.pageUrl            // Your actual wiki URL
+      };
+      
+      setResponse(normalizedResult);
+      return normalizedResult;
+    }
+  }else{ 
     if (hasFiles) {
       const data = new FormData();
       
@@ -132,7 +228,7 @@ function App() {
       
       setResponse(normalizedResult);
       return normalizedResult;
-    }
+    } }
   };  return (
     <>
       {/* Top Nav Section */}
@@ -163,9 +259,29 @@ function App() {
           clearResponse={clearResponse}
           onNavigateHome={() => setShowForm(false)}
         />
-      ) : (
-        <HomePage onStart={() => setShowForm(true)} />
-      )}
+      ) : showGenForm ? (
+        <GenericWikiGeneration
+          apiType={apiType}
+          setApiType={setApiType}
+          fetchPropertyFile={pageData.fetchPropertyFile}
+          setFetchPropertyFile={(value) => setPageData({ ...pageData, fetchPropertyFile: value })}
+          gitOrgs={gitOrgs}
+          setGitOrgs={setGitOrgs}
+          selectedGitOrg={selectedGitOrg}
+          setSelectedGitOrg={setSelectedGitOrg}
+          pageData={pageData}
+          setPageData={setPageData}
+          wikiSpaceKeys={wikiSpaceKeys}
+          setWikiSpaceKeys={setWikiSpaceKeys}
+          handleSubmit={handleSubmit}
+          response={response}
+          clearResponse={clearResponse}
+          onNavigateHome={() => setShowGenForm(false)}
+        />
+      ):(
+        <HomePage onStart={() => setShowForm(true)}
+                  onGenStart={() => setShowGenForm(true)} />
+      )}           
     </>
   );
 }

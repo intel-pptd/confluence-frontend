@@ -1,0 +1,675 @@
+import React, { useState } from "react";
+import RadioGroup from "./RadioGroup";
+import TitleInput from "./TitleInput";
+import ParentPageTitleDropdown from "./ParentPageTitleDropdown";
+import GenWikiSpaceKeyDropdown from "./GenWikiSpaceKeyDropdown";
+import FileInput from "./FileInput";
+import ContactsSection from './GenContactsSection';
+// eslint-disable-next-line no-unused-vars
+import { API_ENDPOINTS } from './config';
+
+// Update the GenericWikiGeneration component with full-page layout
+function GenericWikiGeneration({
+  pageData,
+  setPageData,
+  wikiSpaceKeys,
+  setWikiSpaceKeys,
+  handleSubmit,
+  response,
+  clearResponse,
+  onNavigateHome,
+}) {
+  const containerStyle = {
+    padding: "20px",
+    maxWidth: "100%",
+    width: "100%",
+    minHeight: "100vh",
+    background: "linear-gradient(135deg, #F8FAFC 0%, #E2E8F0 100%)",
+  };
+
+  const sectionStyle = {
+    background: "linear-gradient(145deg, #FFFFFF, #F8F9FA)",
+    borderRadius: "15px",
+    padding: "25px",
+    boxShadow: "0 8px 25px rgba(0, 0, 0, 0.1)",
+    border: "1px solid #E2E8F0",
+    marginBottom: "25px",
+  };
+
+  // Common label style
+  const labelStyle = {
+    display: "block",
+    marginBottom: "8px",
+    fontWeight: "600",
+    color: "#2D3748",
+    fontSize: "14px",
+  };
+
+  // Shared style for text fields
+  const fieldStyle = {
+    width: "100%",
+    padding: "12px 16px",
+    border: "2px solid #E2E8F0",
+    borderRadius: "8px",
+    fontSize: "14px",
+    transition: "all 0.3s ease",
+    background: "#FFFFFF",
+  };
+
+  // Local state for displaying a status message
+  const [statusMessage, setStatusMessage] = useState("");
+  const [inProgress, setInProgress] = useState(false);
+  const [selectedCommFiles, setSelectedCommFiles] = useState([]);
+
+  // === Request Size Estimation (Single Limit) ===
+  // Instead of per-file restrictions, we estimate the total multipart/form-data payload.
+  // NOTE: Actual multipart adds overhead (~ a few hundred bytes per part + boundaries). We add a 7% padding.
+  // Max request size adjusted to 5GB per user request. WARNING: Single-request uploads this large
+  // are likely to be unreliable in browsers and may exceed practical limits of ingress/controllers.
+  // Consider implementing a chunked/direct-to-object-storage upload strategy for production.
+  const MAX_REQUEST_SIZE = 5 * 1024 * 1024 * 1024; // 5 GB
+
+  const sumSizes = (files) => (files || []).reduce((acc, f) => acc + (f?.size || 0), 0);
+  const rawFilesTotal = () => sumSizes(selectedCommFiles);
+  const estimatedRequestSize = () => Math.ceil(rawFilesTotal() * 1.07); // add 7% padding for multipart overhead
+  const formatBytes = (bytes) => {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B','KB','MB','GB'];
+    const i = Math.floor(Math.log(bytes)/Math.log(k));
+    const val = bytes / Math.pow(k,i);
+    return `${val < 10 ? val.toFixed(2) : val.toFixed(1)} ${sizes[i]}`;
+  }; 
+
+  const handleCommFileChange = async (files) => {
+    console.log("Communication files selected:", files);
+    setSelectedCommFiles(files || []);
+  };
+
+  // Wrap the handleSubmit prop in a local handler
+  const onLocalSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!validateRequiredFields()) {
+      return;
+    }
+
+    // Enforce only TOTAL request size limit before submission
+    const estSize = estimatedRequestSize();
+    if (estSize > MAX_REQUEST_SIZE) {
+      setStatusMessage(`Total request size ${formatBytes(estSize)} exceeds limit ${formatBytes(MAX_REQUEST_SIZE)}. Please remove or reduce files.`);
+      return;
+    }
+    
+    // Clear previous response
+    if (clearResponse) {
+      clearResponse();
+    }
+    
+    setInProgress(true);
+    setStatusMessage("Generating Confluence page... Please wait.");
+
+    try {
+      const formDataWithFiles = {       
+        documentType: pageData.documentType || "",
+        productName: pageData.productName || "",
+        productDescription: pageData.productDescription || "",
+        audience: pageData.audience || "",
+        purpose: pageData.purpose || "",
+        tone: pageData.tone || "",
+        wikiSpaceKey: pageData.wikiSpaceKey || "",
+        pageToBeCreatedTitle: pageData.pageToBeCreatedTitle || "",
+        pageToBeCreatedParentPageTitle: pageData.pageToBeCreatedParentPageTitle || "",
+        integrationDevTeam: pageData.integrationDevTeam || "no",
+        integrationDevTeamEmail: pageData.integrationDevTeamEmail || "",
+        businessTeam: pageData.businessTeam || "no",
+        businessTeamEmail: pageData.businessTeamEmail || "",  
+        selectedCommFiles: selectedCommFiles || [],
+        hasFiles: (selectedCommFiles && selectedCommFiles.length > 0)
+      };
+
+      console.log("Sending data:", formDataWithFiles);
+      
+      const result = await handleSubmit(formDataWithFiles);
+      
+      // Detailed backend response logging
+      console.log("=== BACKEND RESPONSE START ===");
+      console.log("Full result:", result);
+      console.log("Result type:", typeof result);
+      console.log("Result keys:", result ? Object.keys(result) : "No keys");
+      console.log("Result.status:", result?.status);
+      console.log("Result.message:", result?.message);
+      console.log("Result.pageURL:", result?.pageURL);
+      console.log("Result.pageUrl:", result?.pageUrl);
+      console.log("JSON stringified:", JSON.stringify(result, null, 2));
+      console.log("=== BACKEND RESPONSE END ===");
+      
+      setInProgress(false);
+      
+      if (result?.status === "success") {
+        const successMsg = result.message || "Confluence page generated successfully!";
+        const pageUrl = result.pageURL || result.pageUrl;
+        
+        if (pageUrl) {
+          setStatusMessage(`${successMsg} - Page URL: ${pageUrl}`);
+        } else {
+          setStatusMessage(successMsg);
+        }
+        console.log("Success response set in parent component");
+        console.log("Page URL:", pageUrl);
+      } else {
+        setStatusMessage(result?.message || "An unexpected error occurred.");
+        console.log("Error response:", result);
+      }
+      
+    } catch (error) {
+      console.error("Submission error:", error);
+      setInProgress(false);
+      setStatusMessage(`Error: ${error.message}`);
+    }
+  };
+
+  // Add validation function
+  const validateRequiredFields = () => {
+    const requiredFields = [
+      { field: pageData.wikiSpaceKey, name: "Wiki Space Key" },
+      { field: pageData.pageToBeCreatedTitle, name: "Page Title" },
+      { field: pageData.pageToBeCreatedParentPageTitle, name: "Parent Page" }
+
+    ];
+
+    const missingFields = requiredFields.filter(item => !item.field || item.field.trim() === "");
+    
+    if (missingFields.length > 0) {
+      const fieldNames = missingFields.map(item => item.name).join(", ");
+      setStatusMessage(`Missing required fields: ${fieldNames}`);
+      return false;
+    }
+
+    // Validate email fields for selected teams
+    const emailValidationErrors = [];
+    
+    if (pageData.integrationDevTeam === "yes" && (!pageData.integrationDevTeamEmail || !pageData.integrationDevTeamEmail.includes('@'))) {
+      emailValidationErrors.push("Integration Dev Team email");
+    }
+    if (pageData.businessTeam === "yes" && (!pageData.businessTeamEmail || !pageData.businessTeamEmail.includes('@'))) {
+      emailValidationErrors.push("Business Team email");
+    }
+
+    if (emailValidationErrors.length > 0) {
+      setStatusMessage(`Invalid or missing email addresses: ${emailValidationErrors.join(", ")}`);
+      return false;
+    }
+
+    return true;
+  };
+
+  // Debug: Log the response prop
+  console.log("Current response prop:", response);
+  console.log("Response status:", response?.status);
+  console.log("Response pageURL:", response?.pageURL);
+  console.log("Response pageUrl:", response?.pageUrl);
+
+  return (
+    <div style={{ minHeight: "100vh", position: "relative" }}>
+      {/* Main Content Area - Full Width */}
+      <div style={containerStyle}>
+        {/* Header with Navigation */}
+        <div style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: "20px",
+          background: "linear-gradient(135deg, #3498DB 0%, #9B59B6 50%, #E74C3C 100%)",
+          borderRadius: "15px",
+          padding: "25px",
+          color: "white",
+        }}>
+          <div>
+            <h1 style={{
+              fontSize: "2.5rem",
+              fontWeight: "700",
+              margin: 0,
+            }}>
+              🚀 Intelligent Generic Wiki Generation
+            </h1>
+            <p style={{
+              fontSize: "1.1rem",
+              margin: 0,
+              opacity: 0.9,
+            }}>
+              Generate comprehensive Confluence pages with AI-powered content creation
+            </p>
+          </div>
+          
+          {/* Navigation Buttons */}
+          <div style={{ display: "flex", gap: "15px", alignItems: "center" }}>
+            <button
+              style={{
+                color: "#fff",
+                background: "rgba(255, 255, 255, 0.2)",
+                border: "2px solid rgba(255, 255, 255, 0.3)",
+                padding: "12px 24px",
+                cursor: "pointer",
+                borderRadius: "8px",
+                fontWeight: "600",
+                fontSize: "1rem",
+                transition: "all 0.3s ease",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                backdropFilter: "blur(10px)",
+              }}
+              onClick={onNavigateHome}
+              onMouseEnter={(e) => {
+                e.target.style.background = "rgba(255, 255, 255, 0.3)";
+                e.target.style.transform = "translateY(-2px)";
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.background = "rgba(255, 255, 255, 0.2)";
+                e.target.style.transform = "translateY(0)";
+              }}
+            >
+              ← Back to Home
+            </button>
+          </div>
+        </div>
+
+        <form onSubmit={onLocalSubmit} style={{ width: "100%" }}>
+          {/* Main Configuration Grid */}
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr 1fr",
+            gap: "25px",
+            marginBottom: "30px",
+          }}>
+            
+            {/* Page Configuration Section */}
+            <div style={sectionStyle}>
+              <h3 style={{
+                color: "#2C3E50",
+                fontSize: "1.2rem",
+                fontWeight: "600",
+                marginBottom: "20px",
+                borderBottom: "2px solid #3498DB",
+                paddingBottom: "10px",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+              }}>
+                🔧 Page Configuration
+              </h3>
+               <div style={{ marginBottom: "20px" }}>
+                <label style={labelStyle}>Document Type: <span style={{ color: "#E74C3C" }}>*</span></label>
+                <TitleInput
+                  value={pageData.documentType}
+                  onChange={(e) => setPageData({ ...pageData, documentType: e.target.value })}
+                  style={{
+                    ...fieldStyle,
+                    width: "90%",
+                    maxWidth: "400px",                    
+                  }}               
+
+                />
+              </div>       
+              <div style={{ marginBottom: "20px" }}>
+                <label style={labelStyle}>Product Name: <span style={{ color: "#E74C3C" }}>*</span></label>
+                <TitleInput
+                  value={pageData.productName}
+                  onChange={(e) => setPageData({ ...pageData, productName: e.target.value })}
+                  style={{
+                    ...fieldStyle,
+                    width: "90%",
+                    maxWidth: "400px",
+                  }}
+                />
+              </div>  
+              <div style={{ marginBottom: "20px" }}>
+                <label style={labelStyle}>Product Description: <span style={{ color: "#E74C3C" }}>*</span></label>
+                <TitleInput
+                  value={pageData.productDescription}
+                  onChange={(e) => setPageData({ ...pageData, productDescription: e.target.value })}
+                  style={{
+                    ...fieldStyle,
+                    width: "90%",
+                    maxWidth: "400px",
+                  }}
+                />
+              </div>  
+              <div style={{ marginBottom: "20px" }}>
+                <label style={labelStyle}>Audience: <span style={{ color: "#E74C3C" }}>*</span></label>
+                <TitleInput
+                  value={pageData.audience}
+                  onChange={(e) => setPageData({ ...pageData, audience: e.target.value })}
+                  style={{
+                    ...fieldStyle,
+                    width: "90%",
+                    maxWidth: "400px",
+                  }}
+                />
+              </div>  
+              <div style={{ marginBottom: "20px" }}>
+                <label style={labelStyle}>Purpose: <span style={{ color: "#E74C3C" }}>*</span></label>
+                <TitleInput
+                  value={pageData.purpose}
+                  onChange={(e) => setPageData({ ...pageData, purpose: e.target.value })}
+                  style={{
+                    ...fieldStyle,
+                    width: "90%",
+                    maxWidth: "400px",
+                  }}
+                />
+              </div>  
+              <div style={{ marginBottom: "20px" }}>
+                <label style={labelStyle}>Tone: <span style={{ color: "#E74C3C" }}>*</span></label>
+                <TitleInput
+                  value={pageData.tone}
+                  onChange={(e) => setPageData({ ...pageData, tone: e.target.value })}
+                  style={{
+                    ...fieldStyle,
+                    width: "90%",
+                    maxWidth: "400px",
+                  }}
+                />
+              </div>  
+              
+            </div>
+
+            {/* Wiki SpaceKey */}
+            <div style={sectionStyle}>
+              <h3 style={{
+                color: "#2C3E50",
+                fontSize: "1.2rem",
+                fontWeight: "600",
+                marginBottom: "20px",
+                borderBottom: "2px solid #9B59B6",
+                paddingBottom: "10px",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+              }}>
+                📚 Wiki Configuration
+              </h3>
+              
+              <div style={{ marginBottom: "20px" }}>
+                <label style={labelStyle}>Wiki Space Key: <span style={{ color: "#E74C3C" }}>*</span></label>
+                <GenWikiSpaceKeyDropdown
+                  wikiSpaceKey={pageData.wikiSpaceKey}
+                  setWikiSpaceKey={(value) => setPageData({ ...pageData, wikiSpaceKey: value })}
+                  wikiSpaceKeys={wikiSpaceKeys}
+                  setWikiSpaceKeys={setWikiSpaceKeys}
+                  style={fieldStyle}
+                  autoFetch={true}
+                />
+              </div>             
+            </div>
+
+            {/* Page Details Section */}
+            <div style={sectionStyle}>
+              <h3 style={{
+                color: "#2C3E50",
+                fontSize: "1.2rem",
+                fontWeight: "600",
+                marginBottom: "20px",
+                borderBottom: "2px solid #E74C3C",
+                paddingBottom: "10px",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+              }}>
+                📄 Page Details
+              </h3>
+              
+              <div style={{ marginBottom: "20px" }}>
+                <label style={labelStyle}>Page Title: <span style={{ color: "#E74C3C" }}>*</span></label>
+                <TitleInput
+                  value={pageData.pageToBeCreatedTitle}
+                  onChange={(e) => setPageData({ ...pageData, pageToBeCreatedTitle: e.target.value })}
+                  style={{
+                    ...fieldStyle,
+                    width: "90%",
+                    maxWidth: "400px",
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={labelStyle}>Parent Page: <span style={{ color: "#E74C3C" }}>*</span></label>
+                <ParentPageTitleDropdown
+                  value={pageData.pageToBeCreatedParentPageTitle}
+                  setValue={(val) => setPageData({ ...pageData, pageToBeCreatedParentPageTitle: val })}
+                  style={{
+                    ...fieldStyle,
+                    width: "90%",
+                    maxWidth: "400px",
+                  }}
+                />
+              </div>
+            </div>    
+          </div>
+
+          {/* Contacts Section - New Addition */}
+          <ContactsSection 
+            pageData={pageData}
+            setPageData={setPageData}
+            labelStyle={labelStyle}
+            sectionStyle={sectionStyle}
+          />
+
+          {/* File Upload Section */}
+          <div style={{
+            ...sectionStyle,
+            marginBottom: "30px",
+          }}>
+            <h3 style={{
+              color: "#2C3E50",
+              fontSize: "1.3rem",
+              fontWeight: "600",
+              marginBottom: "25px",
+              textAlign: "center",
+              borderBottom: "3px solid #3498DB",
+              paddingBottom: "15px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "10px",
+            }}>
+              📁 Document Upload Categories
+            </h3>
+            
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: "1fr",
+              gap: "25px",
+            }}>     
+          
+
+              {/* Communication Documents */}
+              <div style={{
+                padding: "20px",
+                border: "2px solid #3498DB", // Changed from #E74C3C to match TDD/IRD
+                borderRadius: "12px",
+                background: "linear-gradient(145deg, #EBF3FD, #FFFFFF)", // Changed from #FDEAEA to match TDD/IRD
+                transition: "all 0.3s ease",
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "15px" }}>
+                  <span style={{ fontSize: "1.5rem" }}>💬</span>
+                  <label style={{ ...labelStyle, marginBottom: "0", fontSize: "1rem", color: "#3498DB" }}> {/* Changed from #E74C3C to #3498DB */}
+                    Communication Docs
+                  </label>
+                </div>
+                <FileInput
+                  onFileChange={handleCommFileChange}
+                  accept=".txt,.json,.xml,.properties,.yaml,.yml,.md,.csv,.pdf,.doc,.docx"
+                  multiple={true}
+                  label="Choose Communication files"
+                  id="comm-files"
+                  style={{ width: "100%" }}
+                />
+                <div style={{ fontSize: "12px", color: "#7F8C8D", marginTop: "10px", lineHeight: "1.4" }}>
+                  Email threads, Meeting notes, Requirements, Business Specifications
+                </div>
+                {selectedCommFiles.length>0 && (
+                  <div style={{ marginTop: 6, fontSize: 11, color: '#2D3748' }}>
+                    {selectedCommFiles.length} file{selectedCommFiles.length>1?'s':''}
+                  </div>
+                )}
+              </div>
+            </div>
+            {(selectedCommFiles.length)>0 && (
+              <div style={{
+                marginTop: 18,
+                padding: '14px 18px',
+                background: '#F0F9FF',
+                border: '1px dashed #3498DB',
+                borderRadius: 10,
+                fontSize: 12,
+                color: '#1F2D3D',
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: 20
+              }}>
+                <div><strong>Estimated Request Size:</strong> {formatBytes(estimatedRequestSize())} / {formatBytes(MAX_REQUEST_SIZE)}</div>
+                <div><strong>Total File Bytes:</strong> {formatBytes(rawFilesTotal())}</div>
+                <div style={{opacity:0.7}}>Multipart overhead padded by 7%</div>
+                {estimatedRequestSize() > MAX_REQUEST_SIZE && (
+                  <div style={{ color: '#E74C3C', fontWeight: 600 }}>Over limit - adjust before submitting.</div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Generate Button */}
+          <div style={{ textAlign: "center", marginBottom: "30px" }}>
+            <button
+              type="submit"
+              style={{
+                padding: "18px 60px",
+                background: "linear-gradient(145deg, #3498DB, #2980B9)",
+                color: "#fff",
+                border: "none",
+                borderRadius: "12px",
+                cursor: "pointer",
+                fontWeight: "700",
+                fontSize: "1.2rem",
+                transition: "all 0.3s ease",
+                boxShadow: "0 10px 25px rgba(52, 152, 219, 0.4)",
+                textTransform: "uppercase",
+                letterSpacing: "1.5px",
+                minWidth: "300px",
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.transform = "translateY(-3px)";
+                e.target.style.boxShadow = "0 15px 35px rgba(52, 152, 219, 0.6)";
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.transform = "translateY(0)";
+                e.target.style.boxShadow = "0 10px 25px rgba(52, 152, 219, 0.4)";
+              }}
+            >
+              🚀 Generate Wiki Page
+            </button>
+          </div>
+        </form>
+
+        {/* Status and Response Messages */}
+        {inProgress && (
+          <div style={{
+            ...sectionStyle,
+            background: "linear-gradient(145deg, #FFF9E6, #FFFBF0)",
+            border: "2px solid #F39C12",
+            textAlign: "center",
+            color: "#8E44AD",
+            fontSize: "1.1rem",
+            fontWeight: "600",
+          }}>
+            ⏳ {statusMessage}
+          </div>
+        )}
+
+        {/* Show URL regardless of status if it exists */}
+        {!inProgress && response && (response.pageURL || response.pageUrl) && (
+          <div style={{
+            ...sectionStyle,
+            background: "linear-gradient(145deg, #D5F4E6, #A3E4C7)",
+            border: "2px solid #27AE60",
+            textAlign: "center",
+            padding: "30px",
+          }}>
+            <div style={{ 
+              fontWeight: "700", 
+              color: "#1E8449", 
+              fontSize: "1.1rem", 
+              marginBottom: "20px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "10px"
+            }}>
+              <span style={{ fontSize: "2rem" }}>🎉</span>
+              {response.message || "Page generated successfully!"}
+            </div>
+            <div style={{ marginTop: "20px" }}>
+              <a
+                href={response.pageURL || response.pageUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  color: "#2980B9",
+                  textDecoration: "underline",
+                  fontWeight: "600",
+                  fontSize: "1.1rem",
+                  transition: "color 0.3s ease",
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.color = "#3498DB";
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.color = "#2980B9";
+                }}
+              >
+                🔗 View Generated Confluence Page
+              </a>
+            </div>
+          </div>
+        )}
+
+        {!inProgress && statusMessage && response?.status !== "success" && (
+          <div style={{
+            ...sectionStyle,
+            background: "linear-gradient(145deg, #FADBD8, #F1948A)",
+            border: "2px solid #E74C3C",
+            textAlign: "center",
+            color: "#C0392B",
+            fontSize: "1.1rem",
+            fontWeight: "600",
+          }}>
+            ❌ {statusMessage}
+          </div>
+        )}
+
+        {/* Help Section */}
+        <div style={{ textAlign: "center", marginTop: "40px" }}>
+          <span style={{ color: "#7F8C8D", fontSize: "1rem" }}>Need assistance? </span>
+          <a
+            href="https://wiki.ith.intel.com/pages/viewpage.action?pageId=4220987963"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              color: "#3498DB",
+              textDecoration: "none",
+              fontWeight: "600",
+              borderBottom: "2px solid #3498DB",
+              paddingBottom: "2px",
+              transition: "all 0.3s ease",
+            }}
+          >
+            📖 Visit Help Documentation
+          </a>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default GenericWikiGeneration;

@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from "react";
+import LoginModal from "./login";
 
-function HomePage({ onStart }) {
+function HomePage({ onStart, onGenStart }) {
   const [isHovered, setIsHovered] = useState(false);
   const [animationPhase, setAnimationPhase] = useState(0);
 
+  const [showModal, setShowModal] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);  
+const [showLogin, setShowLogin] = useState(false);
   useEffect(() => {
     const interval = setInterval(() => {
       setAnimationPhase(prev => (prev + 1) % 3);
@@ -167,7 +171,81 @@ function HomePage({ onStart }) {
           </div>
         </div>
       </div>
-    </div>
+
+         {/* Generic wiki Action Card */}
+      <div
+        style={{
+          width: "240px",
+          height: "180px",
+          perspective: "1000px",
+          cursor: "pointer",
+          marginBottom: "15px",
+        }}
+        onClick={() => setShowLogin(true)}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
+        <div
+          style={{
+            position: "relative",
+            width: "100%",
+            height: "100%",
+            transition: "transform 0.6s",
+            transformStyle: "preserve-3d",
+            transform: isHovered ? "rotateY(10deg) scale(1.05)" : "rotateY(0deg) scale(1)",
+          }}
+        >
+          <div
+            style={{
+              position: "absolute",
+              width: "100%",
+              height: "100%",
+              backfaceVisibility: "hidden",
+              background: "linear-gradient(145deg, #3498DB, #2980B9)",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "#fff",
+              borderRadius: "15px",
+              boxShadow: isHovered 
+                ? "0 20px 40px rgba(52, 152, 219, 0.4)" 
+                : "0 10px 20px rgba(52, 152, 219, 0.2)",
+              border: "2px solid rgba(255,255,255,0.3)",
+            }}
+          >
+            <div
+              style={{
+                fontSize: "2.5rem",
+                marginBottom: "8px",
+                animation: animationPhase === 0 ? "pulse 1s ease-in-out" : "none",
+              }}
+            >
+              ⚡
+            </div>
+            <h3
+              style={{
+                margin: "0 0 6px 0",
+                fontSize: "1.2rem",
+                fontWeight: "600",
+              }}
+            >
+              Page Genie
+            </h3>
+            <p
+              style={{
+                margin: 0,
+                fontSize: "0.8rem",
+                opacity: 0.8,
+                textAlign: "center",
+              }}
+            >
+              Click to begin automated<br />wiki creation
+            </p>
+          </div>
+        </div>
+      </div>      
+    </div>    
   );
 
   // Right Column Component
@@ -387,7 +465,6 @@ function HomePage({ onStart }) {
           }}
         />
       </div>
-
       <style jsx>{`
         @keyframes pulse {
           0%, 100% { transform: scale(1); }
@@ -398,6 +475,17 @@ function HomePage({ onStart }) {
           50% { transform: translateY(-10px); }
         }
       `}</style>
+        {/* Login Modal */}
+      {showLogin && (
+        <LoginModal
+          onClose={() => setShowLogin(false)}
+          onLogin={() => {
+            setIsLoggedIn(true);            
+            setShowLogin(false);
+            onGenStart(); // 
+          }}
+        />
+      )}
     </div>
   );
 }
