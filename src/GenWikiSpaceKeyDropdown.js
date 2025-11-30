@@ -20,8 +20,10 @@ function GenWikiSpaceKeyDropdown({
   useEffect(() => {
     if (!autoFetch || (wikiSpaceKeys && wikiSpaceKeys.length > 0)) return;
     setLoading(true);
+    const token = localStorage.getItem('authToken');
+    const headers = token ? { Authorization: `Basic ${token}` } : {};
     axios
-      .get(API_ENDPOINTS.GEN_WIKI_SPACE_KEYS)
+      .get(API_ENDPOINTS.GEN_WIKI_SPACE_KEYS, { headers })
       .then((res) => {
         const data = Array.isArray(res.data) ? res.data : [];
         if (setWikiSpaceKeys) setWikiSpaceKeys(data);
