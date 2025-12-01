@@ -4,7 +4,7 @@ metadata:
   name: eip-sc-automation-frontend-ingress
   namespace: pptd-prod
   annotations:
-    nginx.ingress.kubernetes.io/proxy-body-size: "5g"
+    nginx.ingress.kubernetes.io/proxy-body-size: "5000m"
 spec:
   rules:
     - host: pptd-automations.intel.com
