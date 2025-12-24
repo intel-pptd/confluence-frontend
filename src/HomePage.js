@@ -479,10 +479,10 @@ const [showLogin, setShowLogin] = useState(false);
       {showLogin && (
         <LoginModal
           onClose={() => setShowLogin(false)}
-          onLogin={() => {
-            setIsLoggedIn(true);            
+          onLogin={(info) => {
+            setIsLoggedIn(true);
             setShowLogin(false);
-            onGenStart(); // 
+            onGenStart();
           }}
         />
       )}

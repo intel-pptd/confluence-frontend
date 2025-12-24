@@ -19,6 +19,9 @@ function GenericWikiGeneration({
   clearResponse,
   onNavigateHome,
 }) {
+  const displayName = (typeof window !== 'undefined' && window.localStorage)
+    ? (localStorage.getItem('authDisplayName') || '')
+    : '';
   const containerStyle = {
     padding: "20px",
     maxWidth: "100%",
@@ -242,8 +245,19 @@ function GenericWikiGeneration({
             </p>
           </div>
           
-          {/* Navigation Buttons */}
+          {/* Right side: Signed-in name + Navigation */}
           <div style={{ display: "flex", gap: "15px", alignItems: "center" }}>
+            {displayName && (
+              <div style={{
+                padding: '8px 12px',
+                background: 'rgba(255,255,255,0.15)',
+                border: '1px solid rgba(255,255,255,0.3)',
+                borderRadius: 8,
+                fontWeight: 600
+              }}>
+                Signed in as {displayName}
+              </div>
+            )}
             <button
               style={{
                 color: "#fff",

@@ -1,21 +1,62 @@
 
 import React, { useState } from "react";
+import { API_ENDPOINTS } from "./config";
 
 const toBase64 = (str) => window.btoa(str);
 
 export default function LoginModal({ onClose, onLogin }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!username || !password) {
-      alert("Please enter both username and password");
+      setError("Please enter both username and password");
       return;
     }
-    const token = toBase64(`${username}:${password}`);
-    localStorage.setItem("authToken", token);
-    onLogin(); 
-    onClose(); 
+    setLoading(true);
+    setError("");
+    try {
+      const token = toBase64(`${username}:${password}`);
+      const loginUrl = `${API_ENDPOINTS.GEN_WIKI_LOGIN_PATH}?username=${encodeURIComponent(username)}`;
+      const res = await fetch(loginUrl, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Basic ${token}`,
+          'Accept': 'application/json',
+        },
+      });
+
+      if (!res.ok) {
+        let message = `Sign in failed (status ${res.status})`;
+        try {
+          const text = await res.text();
+          if (text) {
+            try {
+              const json = JSON.parse(text);
+              message = json.error || json.details?.message || json.message || text;
+            } catch {
+              message = text;
+            }
+          }
+        } catch {}
+        throw new Error(message);
+      }
+
+      const data = await res.json();
+      const displayName = data?.displayName || data?.user?.displayName || username;
+
+      localStorage.setItem('authToken', token);
+      localStorage.setItem('authDisplayName', displayName);
+
+      if (typeof onLogin === 'function') onLogin({ displayName });
+      onClose();
+    } catch (e) {
+      setError(e?.message || 'Invalid username or password. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -60,6 +101,9 @@ export default function LoginModal({ onClose, onLogin }) {
         </button>
 
         <h2>Login</h2>
+        {error && (
+          <div style={{ color: '#C0392B', fontSize: 12, marginBottom: 8 }}>{error}</div>
+        )}
         <input
           type="text"
           placeholder="Username"
@@ -97,8 +141,9 @@ export default function LoginModal({ onClose, onLogin }) {
             borderRadius: "4px",
             cursor: "pointer",
           }}
+          disabled={loading}
         >
-          Login
+          {loading ? 'Signing in...' : 'Login'}
         </button>
       </div>
     </div>
