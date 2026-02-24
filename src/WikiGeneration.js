@@ -454,6 +454,7 @@ function WikiGeneration({
                 <label style={labelStyle}>App Name: <span style={{ color: "#E74C3C" }}>*</span></label>
                 <input
                   type="text"
+                  name="appName"
                   value={pageData.appName}
                   onChange={(e) => setPageData({ ...pageData, appName: e.target.value })}
                   style={{
@@ -469,6 +470,7 @@ function WikiGeneration({
                 <label style={labelStyle}>Proxy Name: <span style={{ color: "#E74C3C" }}>*</span></label>
                 <input 
                   type="text"
+                  name="proxyName"
                   value={pageData.proxyName}
                   onChange={(e) => setPageData({ ...pageData, proxyName: e.target.value })}
                   style={{
@@ -476,7 +478,6 @@ function WikiGeneration({
                     width: "90%",
                     maxWidth: "400px",
                   }}
-                  required
                   placeholder="Enter your application's proxy name"
                 />
               </div>
@@ -750,7 +751,6 @@ function WikiGeneration({
         <div style={{ textAlign: "center", marginTop: "40px" }}>
           <span style={{ color: "#7F8C8D", fontSize: "1rem" }}>Need assistance? </span>
           <a
-            href="https://wiki.ith.intel.com/pages/viewpage.action?pageId=4220987963"
             target="_blank"
             rel="noopener noreferrer"
             style={{
