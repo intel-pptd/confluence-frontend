@@ -31,11 +31,18 @@ function App() {
   // Alternative approach: Add file metadata
   
   const handleSubmit = async (formDataWithFiles) => {
-  const hasFiles = formDataWithFiles.hasFiles;
-  const audience = formDataWithFiles.audience;
-  if(audience){
+    try {
+      const hasFiles = formDataWithFiles.hasFiles;
+      const audience = formDataWithFiles.audience;
+      const token = localStorage.getItem("authToken");
+      
+      if (!token) {
+        throw new Error("Authentication token not found. Please login first.");
+      }
+      
+      if(audience){
     const token = localStorage.getItem("authToken");
-    if (hasFiles) {      
+        if (hasFiles) {      
       const data = new FormData();      
       // Add form fields for generic wiki
       data.append('documentType',formDataWithFiles.documentType);
@@ -228,8 +235,19 @@ function App() {
       
       setResponse(normalizedResult);
       return normalizedResult;
-    } }
-  };  return (
+    }
+    }
+    } catch (error) {
+      console.error('Error generating wiki page:', error);
+      const errorResult = {
+        status: "error",
+        message: error.message || "Failed to generate wiki page"
+      };
+      setResponse(errorResult);
+      return errorResult;
+    }
+  };
+  return (
     <>
       {/* Top Nav Section */}
       <div className="container-fluid" style={{ 

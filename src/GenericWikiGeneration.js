@@ -666,7 +666,7 @@ function GenericWikiGeneration({
         <div style={{ textAlign: "center", marginTop: "40px" }}>
           <span style={{ color: "#7F8C8D", fontSize: "1rem" }}>Need assistance? </span>
           <a
-            href="https://wiki.ith.intel.com/pages/viewpage.action?pageId=4220987963"
+            href="https://wiki.ith.intel.com/pages/viewpage.action?pageId=4523984561"
             target="_blank"
             rel="noopener noreferrer"
             style={{
