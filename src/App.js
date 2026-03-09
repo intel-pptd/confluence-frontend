@@ -36,9 +36,9 @@ function App() {
       const audience = formDataWithFiles.audience;
       const token = localStorage.getItem("authToken");
       
-      if (!token) {
-        throw new Error("Authentication token not found. Please login first.");
-      }
+      //if (!token) {
+        //throw new Error("Authentication token not found. Please login first.");
+      //}
       
       if(audience){
     const token = localStorage.getItem("authToken");
@@ -172,7 +172,7 @@ function App() {
         });
       }
       
-      const response = await fetch(`${BACKEND_DOMAIN}/generate-confluence`, {
+      const response = await fetch(`${API_ENDPOINTS.GENERATE_CONFLUENCE}`, {
         method: 'POST',
         body: data
       });
@@ -195,7 +195,7 @@ function App() {
       return normalizedResult;
     } else {
       // Send JSON request without files
-      const response = await fetch(`${BACKEND_DOMAIN}/generate-confluence`, {
+      const response = await fetch(`${API_ENDPOINTS.GENERATE_CONFLUENCE}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
